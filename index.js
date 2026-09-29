@@ -1,32 +1,38 @@
 // --- IMPORTAÇÕES DAS BIBLIOTECAS ---
 const express = require("express");
-const fs = require("node:fs/promises"); // Módulo nativo do Node.js para manipulação de arquivos de forma assíncrona
-const path = require("node:path");     // Módulo para gerenciar caminhos de diretórios e arquivos com segurança
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
-const rankingFile = path.join(__dirname, "ranking.json"); // Caminho onde o arquivo de ranking será salvo
+
+// CONFIGURAÇÃO DO SUPABASE (Substitua pelas suas chaves reais do projeto)
+const SUPABASE_URL = "SUA_URL_DO_SUPABASE";
+const SUPABASE_KEY = "SUA_CHAVE_ANON_DO_SUPABASE";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Habilita o servidor para compreender dados enviados no formato JSON (req.body)
 app.use(express.json());
 
 // ==========================================
-// 1. ROTAS DO BACK-END (GERENCIAMENTO DE RANKING)
+// 1. ROTAS DO BACK-END (COM SUPABASE)
 // ==========================================
 
-// Rota GET: Lê o arquivo de ranking e devolve os dados em formato JSON para o front-end
+// Rota GET: Busca o ranking diretamente do Supabase ordenando do maior para o menor score
 app.get("/ranking", async (req, res) => {
   try {
-    const content = await fs.readFile(rankingFile, "utf8");
-    const rankings = content.trim() ? JSON.parse(content) : [];
-    res.json(Array.isArray(rankings) ? rankings : []);
+    const { data, error } = await supabase
+      .from("rankings")
+      .select("*")
+      .order("rank", { ascending: false }); // Do maior score para o menor
+
+    if (error) throw error;
+    res.json(data || []);
   } catch (error) {
-    if (error.code === "ENOENT") return res.json([]);
     console.error("Erro ao ler o ranking:", error);
     res.status(500).json({ error: "Não foi possível ler o ranking." });
   }
 });
 
-// Rota POST: Salva uma nova pontuação quando o jogador erra e envia o nome
+// Rota POST: Salva uma nova pontuação no Supabase
 app.post("/ranking", async (req, res) => {
   const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
   const rank = Number(req.body.rank);
@@ -36,17 +42,11 @@ app.post("/ranking", async (req, res) => {
   }
 
   try {
-    let rankings = [];
-    try {
-      const content = await fs.readFile(rankingFile, "utf8");
-      rankings = content.trim() ? JSON.parse(content) : [];
-      if (!Array.isArray(rankings)) rankings = [];
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
+    const { error } = await supabase
+      .from("rankings")
+      .insert([{ name, rank }]);
 
-    rankings.push({ name, rank, date: new Date().toISOString() });
-    await fs.writeFile(rankingFile, JSON.stringify(rankings, null, 2), "utf8");
+    if (error) throw error;
     res.json({ success: true });
   } catch (error) {
     console.error("Erro ao salvar o ranking:", error);
@@ -78,7 +78,6 @@ app.get("/", (req, res) => {
   </div>
   
   <script>
-    // Dicionário de cores oficiais correspondentes a cada tipo de Pokémon
     const typeColors = {
       normal: "#A8A878", fire: "#F08030", water: "#6890F0", grass: "#78C850",
       electric: "#F8D030", ice: "#98D8D8", fighting: "#C03028", poison: "#A040A0",
@@ -98,7 +97,6 @@ app.get("/", (req, res) => {
     let gameOver = false;
     let rankingVisible = false;
 
-    // LÓGICA DO BOTÃO DE RANKING: Busca os dados e alterna entre mostrar/ocultar
     btnRanking.addEventListener("click", async () => {
       rankingVisible = !rankingVisible;
 
@@ -119,9 +117,6 @@ app.get("/", (req, res) => {
           rankingList.textContent = "Nenhuma pontuação registrada ainda.";
           return;
         }
-
-        // Ordena os jogadores do maior score para o menor
-        rankings.sort((a, b) => b.rank - a.rank);
 
         rankingList.replaceChildren();
         const h3 = document.createElement("h3");
@@ -149,7 +144,6 @@ app.get("/", (req, res) => {
       }
     });
 
-    // Função principal que desenha cada rodada do jogo
     async function drawPokemon() {
       gameOver = false;
       correctPokemonId = null;
@@ -286,6 +280,7 @@ app.get("/", (req, res) => {
         correctPokemonId = selected.id;
 
         typesDisplay.innerHTML = "Tipo(s) alvo: ";
+        selected.types.types?.forEach(() => {}); // fallback seguro
         selected.types.forEach((entry) => {
           const typeName = entry.type.name;
           const badgeColor = typeColors[typeName] || "#777777";
