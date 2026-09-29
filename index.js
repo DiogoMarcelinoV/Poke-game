@@ -4,9 +4,10 @@ const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
-// CONFIGURAÇÃO DO SUPABASE (Substitua pelas suas chaves reais do projeto)
-const SUPABASE_URL = "SUA_URL_DO_SUPABASE";
-const SUPABASE_KEY = "SUA_CHAVE_ANON_DO_SUPABASE";
+// CONFIGURAÇÃO DIRETA DO SUPABASE (Substitua pelos seus dados reais)
+const SUPABASE_URL = "https://fdfmjliiubnumfkqworq.supabase.co"; // Cole aqui a URL exata que o Supabase te deu
+const SUPABASE_KEY = "sb_publishable_tngEOFBwjUWlneNd4MG9Tw_7872Gafy";        // Cole aqui a chave anon/public
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Habilita o servidor para compreender dados enviados no formato JSON (req.body)
