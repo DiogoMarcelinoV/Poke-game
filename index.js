@@ -4,10 +4,9 @@ const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
-// CONFIGURAÇÃO DIRETA DO SUPABASE (Substitua pelos seus dados reais)
-const SUPABASE_URL = "https://fdfmjliiubnumfkqworq.supabase.co"; // Cole aqui a URL exata que o Supabase te deu
-const SUPABASE_KEY = "sb_publishable_tngEOFBwjUWlneNd4MG9Tw_7872Gafy";        // Cole aqui a chave anon/public
-
+// CONFIGURAÇÃO DO SUPABASE (Compatível com variáveis de ambiente do Render e testes locais)
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://fdfmjliiubnumfkqworq.supabase.co";
+const SUPABASE_KEY = process.env.SUPABASE_KEY || "sb_publishable_tngEOFBwjUWlneNd4MG9Tw_7872Gafy";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Habilita o servidor para compreender dados enviados no formato JSON (req.body)
@@ -17,7 +16,7 @@ app.use(express.json());
 // 1. ROTAS DO BACK-END (COM SUPABASE)
 // ==========================================
 
-// Rota GET: Busca o ranking diretamente do Supabase ordenando do maior para o menor score
+// Rota GET: Busca o ranking diretamente do Supabase
 app.get("/ranking", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -61,21 +60,74 @@ app.post("/ranking", async (req, res) => {
 
 app.get("/", (req, res) => {
   res.send(`
-  <div style="padding: 2px 20px; font-family: system-ui">
-    <h1 style="color: #5C6AC4;">Pokémon aleatório</h1>
-    
+  <!doctype html>
+  <html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#5C6AC4">
+    <title>Pokemon Types</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        padding: 24px 20px 100px;
+        font-family: system-ui, sans-serif;
+        color: #20233a;
+        background: linear-gradient(145deg, #f5f6ff, #eef7ff);
+      }
+      .game-shell { width: min(100%, 1000px); margin: 0 auto; }
+      h1 { margin: 8px 0 22px; color: #5C6AC4; text-align: center; font-size: clamp(2rem, 5vw, 3rem); }
+      #draw-counter { width: fit-content; margin: 0 auto 22px; padding: 8px 18px; border-radius: 999px; background: #fff; font-weight: 700; box-shadow: 0 2px 10px #26315a12; }
+      #pokemon-types { min-height: 56px; margin-bottom: 18px; text-align: center; }
+      #pokemon-types span { padding: 12px 22px !important; margin: 5px !important; border-radius: 14px !important; font-size: clamp(1.35rem, 3vw, 1.7rem) !important; }
+      #pokemon-name { text-align: center; }
+      #pokemon-name > p { margin: 12px 0 22px; font-size: clamp(1.15rem, 2.5vw, 1.5rem); font-weight: 650; }
+      .pokemon-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; width: 100%; }
+      .pokemon-card { min-width: 0; margin: 0 !important; padding: 12px 8px; border: 1px solid #e3e6f2; border-radius: 18px; background: #fff; box-shadow: 0 5px 16px #26315a12; font-weight: 700; }
+      .pokemon-image { display: block; width: min(100%, 180px); height: auto; aspect-ratio: 1; margin: 4px auto 0; object-fit: contain; touch-action: manipulation; }
+      .pokemon-image:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #f3b935; outline-offset: 3px; }
+      #ranking-widget { position: fixed; z-index: 1000; bottom: max(20px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); }
+      #ranking-list { display: none; width: min(340px, calc(100vw - 40px)); max-height: min(300px, 50vh); margin-bottom: 8px; padding: 14px; overflow-y: auto; border-radius: 12px; background: #fff; box-shadow: 0 4px 18px #0003; }
+      #btn-ranking, #pokemon-name button { min-height: 44px; padding: 10px 16px; border: 0; border-radius: 8px; background: #5C6AC4; color: #fff; font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px #0002; }
+      #pokemon-name form { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 18px auto; }
+      #pokemon-name input { min-height: 44px; max-width: 100%; padding: 8px 10px; border: 1px solid #aeb4ca; border-radius: 8px; font: inherit; }
+      .loss-modal { position: fixed; z-index: 2000; inset: 0; display: grid; place-items: center; padding: 20px; background: #11172acc; }
+      .loss-modal-card { width: min(100%, 420px); padding: 24px; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px #0004; text-align: center; }
+      .loss-modal-card h2 { margin: 0 0 8px; color: #5C6AC4; }
+      .loss-modal-card p { margin: 8px 0 16px; }
+      .loss-modal-card form { display: grid; gap: 12px; }
+      .loss-modal-card label { display: grid; gap: 8px; text-align: left; font-weight: 600; }
+      .loss-modal-card input { width: 100%; min-height: 46px; padding: 10px 12px; border: 0; border-radius: 8px; background: #f1f3fa; font: inherit; }
+      .loss-modal-card button { min-height: 46px; padding: 10px 16px; border: 0; border-radius: 8px; background: #5C6AC4; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+      .loss-modal-card button:disabled { opacity: .65; cursor: wait; }
+      @media (max-width: 700px) {
+        body { padding: 18px 14px calc(100px + env(safe-area-inset-bottom)); }
+        .pokemon-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .pokemon-card { padding: 8px 5px; border-radius: 14px; }
+        .pokemon-image { width: min(100%, 150px); }
+      }
+      @media (max-width: 420px) {
+        body { padding-right: 10px; padding-left: 10px; }
+        .pokemon-row { gap: 8px; }
+        #ranking-widget { right: max(10px, env(safe-area-inset-right)); left: max(10px, env(safe-area-inset-left)); text-align: center; }
+        #ranking-list { width: 100%; max-height: 35vh; text-align: left; }
+      }
+    </style>
+  </head>
+  <body>
+  <main class="game-shell">
+    <h1>Pokemon Types</h1>
     <p id="draw-counter" aria-live="polite">Score: 0</p>
-    <div id="pokemon-types" aria-live="polite" style="margin-bottom: 15px;"></div>
+    <div id="pokemon-types" aria-live="polite"></div>
     <div id="pokemon-name" aria-live="polite"></div>
+  </main>
 
-    <!-- BOTÃO E RANKING FIXADOS NO CANTO INFERIOR ESQUERDO -->
-    <div style="position: fixed; bottom: 20px; left: 20px; z-index: 1000;">
-      <!-- Caixa de listagem do ranking (abre para cima do botão) -->
-      <div id="ranking-list" style="margin-bottom: 8px; background: #f4f4f4; padding: 10px; border-radius: 6px; display: none; max-width: 300px; max-height: 250px; overflow-y: auto; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);"></div>
-      
-      <!-- Botão fixado -->
-      <button id="btn-ranking" style="padding: 10px 16px; cursor: pointer; background-color: #5C6AC4; color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">Ver Ranking</button>
-    </div>
+  <div id="ranking-widget">
+    <div id="ranking-list"></div>
+    <button id="btn-ranking">Ver Ranking</button>
   </div>
   
   <script>
@@ -90,6 +142,7 @@ app.get("/", (req, res) => {
     const result = document.getElementById("pokemon-name");
     const typesDisplay = document.getElementById("pokemon-types");
     const drawCounter = document.getElementById("draw-counter");
+    typesDisplay.style.textAlign = "center";
     const btnRanking = document.getElementById("btn-ranking");
     const rankingList = document.getElementById("ranking-list");
 
@@ -188,21 +241,20 @@ app.get("/", (req, res) => {
 
         result.replaceChildren();
         const heading = document.createElement("p");
-        heading.textContent = "Os 4 Pokémon sorteados:";
+        heading.textContent = "Qual deles pertence a esse tipo?";
         result.appendChild(heading);
 
         const pokemonRow = document.createElement("div");
-        pokemonRow.style.display = "flex";
-        pokemonRow.style.justifyContent = "center";
-        pokemonRow.style.gap = "12px";
-        pokemonRow.style.flexWrap = "wrap";
+        pokemonRow.className = "pokemon-row";
         result.appendChild(pokemonRow);
 
         pokemonList.forEach((pokemon) => {
           const item = document.createElement("p");
+          item.className = "pokemon-card";
           item.style.margin = "0";
           item.style.textAlign = "center";
           const image = document.createElement("img");
+          image.className = "pokemon-image";
           
           image.src = pokemon.sprites.other?.["official-artwork"]?.front_default || pokemon.sprites.front_default;
           image.alt = pokemon.name;
@@ -220,11 +272,23 @@ app.get("/", (req, res) => {
             } else {
               gameOver = true;
               const finalRank = drawCount;
-              typesDisplay.textContent = "Você perdeu!";
+              const modal = document.createElement("div");
+              modal.className = "loss-modal";
+              modal.setAttribute("role", "dialog");
+              modal.setAttribute("aria-modal", "true");
+              modal.setAttribute("aria-labelledby", "loss-modal-title");
+
+              const modalCard = document.createElement("div");
+              modalCard.className = "loss-modal-card";
+              const modalTitle = document.createElement("h2");
+              modalTitle.id = "loss-modal-title";
+              modalTitle.textContent = "Você perdeu!";
+              const scoreMessage = document.createElement("p");
+              scoreMessage.textContent = "Sua pontuação: " + finalRank;
 
               const nameForm = document.createElement("form");
               const nameLabel = document.createElement("label");
-              nameLabel.textContent = "Digite seu nome: ";
+              nameLabel.textContent = "Digite seu nome para salvar no ranking:";
               const nameInput = document.createElement("input");
               nameInput.type = "text";
               nameInput.name = "name";
@@ -232,12 +296,15 @@ app.get("/", (req, res) => {
               nameInput.required = true;
               const submitButton = document.createElement("button");
               submitButton.type = "submit";
-              submitButton.textContent = "Confirmar nome";
+              submitButton.textContent = "Salvar pontuação";
               const nameMessage = document.createElement("p");
 
               nameLabel.appendChild(nameInput);
               nameForm.append(nameLabel, submitButton, nameMessage);
-              typesDisplay.appendChild(nameForm);
+              modalCard.append(modalTitle, scoreMessage, nameForm);
+              modal.appendChild(modalCard);
+              document.body.appendChild(modal);
+              nameInput.focus();
 
               nameForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
@@ -255,6 +322,7 @@ app.get("/", (req, res) => {
                     throw new Error(data.error || "Não foi possível salvar o resultado.");
                   }
 
+                  modal.remove();
                   drawCount = -1;
                   drawPokemon();
                 } catch (error) {
@@ -280,8 +348,7 @@ app.get("/", (req, res) => {
         const selected = pokemonList[Math.floor(Math.random() * pokemonList.length)];
         correctPokemonId = selected.id;
 
-        typesDisplay.innerHTML = "Tipo(s) alvo: ";
-        selected.types.types?.forEach(() => {}); // fallback seguro
+        typesDisplay.replaceChildren();
         selected.types.forEach((entry) => {
           const typeName = entry.type.name;
           const badgeColor = typeColors[typeName] || "#777777";
@@ -290,9 +357,9 @@ app.get("/", (req, res) => {
           typeBadge.textContent = typeName.toUpperCase();
           typeBadge.style.backgroundColor = badgeColor;
           typeBadge.style.color = "#FFFFFF";
-          typeBadge.style.padding = "4px 10px";
+          typeBadge.style.padding = "8px 16px";
           typeBadge.style.borderRadius = "12px";
-          typeBadge.style.fontSize = "14px";
+          typeBadge.style.fontSize = "20px";
           typeBadge.style.fontWeight = "bold";
           typeBadge.style.marginRight = "6px";
           typeBadge.style.display = "inline-block";
@@ -309,6 +376,8 @@ app.get("/", (req, res) => {
 
     drawPokemon();
   </script>
+  </body>
+  </html>
   `);
 });
 
