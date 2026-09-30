@@ -5,8 +5,8 @@ const { createClient } = require("@supabase/supabase-js");
 const app = express();
 
 // CONFIGURAÇÃO DO SUPABASE (Compatível com variáveis de ambiente do Render e testes locais)
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://fdfmjliiubnumfkqworq.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_KEY || "sb_publishable_tngEOFBwjUWlneNd4MG9Tw_7872Gafy";
+const SUPABASE_URL = "https://fdfmjliiubnumfkqworq.supabase.co"; // Cole aqui a URL exata que o Supabase te deu
+const SUPABASE_KEY = "sb_publishable_tngEOFBwjUWlneNd4MG9Tw_7872Gafy";        // Cole aqui a chave anon/public
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Habilita o servidor para compreender dados enviados no formato JSON (req.body)
